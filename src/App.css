@@ -1,0 +1,156 @@
+/* ── Import fonts ── */
+@import url("https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap");
+
+/* ── Base reset ── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "DM Sans", sans-serif;
+  background: #0d0d1a;
+  min-height: 100vh;
+}
+
+/* ── Font aliases ── */
+.font-display {
+  font-family: "Syne", sans-serif;
+}
+.font-body {
+  font-family: "DM Sans", sans-serif;
+}
+
+/* ── Card ── */
+.card {
+  background: rgba(18, 16, 32, 0.85);
+  border: 1px solid rgba(150, 80, 255, 0.18);
+  backdrop-filter: blur(24px);
+  border-radius: 20px;
+  box-shadow:
+    0 0 60px rgba(120, 40, 255, 0.12),
+    0 32px 64px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Logo icon ── */
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, #a855f7, #7c3aed);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: "Syne", sans-serif;
+  font-weight: 800;
+  color: #fff;
+  font-size: 16px;
+  box-shadow: 0 4px 16px rgba(168, 85, 247, 0.4);
+}
+
+/* ── Primary button ── */
+.btn-primary {
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+  color: #fff;
+  font-family: "DM Sans", sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.35);
+}
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 28px rgba(168, 85, 247, 0.5);
+}
+.btn-primary:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* ── Social buttons ── */
+.btn-social {
+  padding: 11px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #d0c8e8;
+  font-family: "DM Sans", sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.btn-social:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ── Background grid ── */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(100, 60, 200, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(100, 60, 200, 0.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ── Floating orb animation ── */
+.orb {
+  animation: floatOrb linear infinite;
+}
+
+@keyframes floatOrb {
+  0% {
+    transform: translateY(0px) translateX(0px);
+    opacity: 0.6;
+  }
+  25% {
+    transform: translateY(-12px) translateX(6px);
+    opacity: 0.9;
+  }
+  50% {
+    transform: translateY(-6px) translateX(-4px);
+    opacity: 0.7;
+  }
+  75% {
+    transform: translateY(-18px) translateX(8px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0px) translateX(0px);
+    opacity: 0.6;
+  }
+}
+
+/* ── Spinner ── */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Fade-in animation ── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease both;
+}
