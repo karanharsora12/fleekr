@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import { registerUser } from "../services/authService";
 
 /* ── Floating orbs data ── */
 const ORBS = [
@@ -71,9 +72,82 @@ const ORBS = [
 ];
 
 export default function RegisterPage() {
+  const navigate = useNavigate();
+
+  /* ── Form state ── */
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    password: "",
+    password_confirmation: "",
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [agreed, setAgreed] = useState(false);
+
+  /* ── Async state ── */
+  const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({}); // field-level errors
+  const [apiError, setApiError] = useState(""); // general API error
+
+  /* ── Helpers ── */
+  const handleChange = (e) => {
+    const { id, value } = e.target;
+    const key =
+      id === "full-name"
+        ? "name"
+        : id === "confirm-password"
+          ? "password_confirmation"
+          : id;
+
+    setForm((prev) => ({ ...prev, [key]: value }));
+    setErrors((prev) => ({ ...prev, [key]: "" }));
+    setApiError("");
+  };
+
+  /* ── Submit ── */
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    const clientErrors = {};
+    if (!form.name.trim()) clientErrors.name = "Full name is required.";
+    if (!form.email.trim()) clientErrors.email = "Email is required.";
+    if (!form.password) clientErrors.password = "Password is required.";
+    if (form.password.length > 0 && form.password.length < 8)
+      clientErrors.password = "Password must be at least 8 characters.";
+    if (form.password !== form.password_confirmation)
+      clientErrors.password_confirmation = "Passwords do not match.";
+    if (!agreed) clientErrors.terms = "You must agree to the terms.";
+
+    if (Object.keys(clientErrors).length > 0) {
+      setErrors(clientErrors);
+      return;
+    }
+
+    setLoading(true);
+    setApiError("");
+    setErrors({});
+
+    try {
+      await registerUser(form);
+      // Redirect to login after success
+      navigate("/login");
+    } catch (err) {
+      const data = err?.response?.data;
+      if (data?.errors) {
+        // Laravel validation errors
+        const fieldErrors = {};
+        Object.entries(data.errors).forEach(([field, msgs]) => {
+          fieldErrors[field] = Array.isArray(msgs) ? msgs[0] : msgs;
+        });
+        setErrors(fieldErrors);
+      } else {
+        setApiError(data?.message || "Something went wrong. Please try again.");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="relative min-h-screen bg-[#0d0b1a] flex items-center justify-center px-4 py-10 overflow-hidden">
@@ -158,7 +232,13 @@ export default function RegisterPage() {
         </p>
 
         {/* ── Form ── */}
-        <form className="flex flex-col gap-4">
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+          {/* General API Error */}
+          {apiError && (
+            <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs">
+              {apiError}
+            </div>
+          )}
           {/* Full Name */}
           <div>
             <label className="block text-slate-300 text-sm mb-1.5 font-medium">
@@ -168,12 +248,21 @@ export default function RegisterPage() {
               id="full-name"
               type="text"
               placeholder="Your name"
-              className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+              value={form.name}
+              onChange={handleChange}
+              className={`w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition ${
+                errors.name ? "ring-2 ring-red-500/50" : ""
+              }`}
               style={{
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.09)",
               }}
             />
+            {errors.name && (
+              <span className="text-red-400 text-[10px] mt-1 ml-1">
+                {errors.name}
+              </span>
+            )}
           </div>
 
           {/* Email */}
@@ -185,12 +274,21 @@ export default function RegisterPage() {
               id="email"
               type="email"
               placeholder="you@example.com"
-              className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+              value={form.email}
+              onChange={handleChange}
+              className={`w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition ${
+                errors.email ? "ring-2 ring-red-500/50" : ""
+              }`}
               style={{
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.09)",
               }}
             />
+            {errors.email && (
+              <span className="text-red-400 text-[10px] mt-1 ml-1">
+                {errors.email}
+              </span>
+            )}
           </div>
 
           {/* Password */}
@@ -203,7 +301,11 @@ export default function RegisterPage() {
                 id="password"
                 type={showPassword ? "text" : "password"}
                 placeholder="Create a password"
-                className="w-full rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                value={form.password}
+                onChange={handleChange}
+                className={`w-full rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition ${
+                  errors.password ? "ring-2 ring-red-500/50" : ""
+                }`}
                 style={{
                   background: "rgba(255,255,255,0.05)",
                   border: "1px solid rgba(255,255,255,0.09)",
@@ -235,7 +337,11 @@ export default function RegisterPage() {
                 id="confirm-password"
                 type={showConfirm ? "text" : "password"}
                 placeholder="Confirm your password"
-                className="w-full rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                value={form.password_confirmation}
+                onChange={handleChange}
+                className={`w-full rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition ${
+                  errors.password_confirmation ? "ring-2 ring-red-500/50" : ""
+                }`}
                 style={{
                   background: "rgba(255,255,255,0.05)",
                   border: "1px solid rgba(255,255,255,0.09)",
@@ -290,6 +396,9 @@ export default function RegisterPage() {
               <a href="#" className="text-purple-400 hover:underline">
                 Privacy Policy
               </a>
+              {errors.terms && (
+                <p className="text-red-400 text-[10px] mt-1">{errors.terms}</p>
+              )}
             </span>
           </label>
 
@@ -297,15 +406,25 @@ export default function RegisterPage() {
           <button
             id="register-btn"
             type="submit"
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 mt-1"
+            disabled={loading}
+            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-semibold transition-all duration-200 mt-1 ${
+              loading
+                ? "opacity-70 cursor-not-allowed"
+                : "hover:-translate-y-0.5 active:translate-y-0 shadow-lg shadow-purple-500/38"
+            }`}
             style={{
               background: "linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)",
-              boxShadow: "0 4px 22px rgba(168,85,247,0.38)",
               fontFamily: "'DM Sans', sans-serif",
             }}
           >
-            Create Account
-            <Icon icon="mdi:arrow-right" width={18} />
+            {loading ? (
+              <Icon icon="mdi:loading" className="animate-spin" width={20} />
+            ) : (
+              <>
+                Create Account
+                <Icon icon="mdi:arrow-right" width={18} />
+              </>
+            )}
           </button>
 
           {/* OR divider */}
