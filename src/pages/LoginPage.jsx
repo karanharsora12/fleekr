@@ -1,26 +1,110 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import { loginUser } from "../services/authService";
 
 /* ── Floating orbs data ── */
 const ORBS = [
-  { top: "8%",  left: "7%",  size: 10, color: "#a855f7", delay: "0s",   duration: "7s"  },
-  { top: "15%", left: "87%", size: 8,  color: "#ec4899", delay: "1s",   duration: "9s"  },
-  { top: "42%", left: "4%",  size: 7,  color: "#6366f1", delay: "2s",   duration: "8s"  },
-  { top: "63%", left: "91%", size: 9,  color: "#8b5cf6", delay: "0.5s", duration: "6s"  },
-  { top: "78%", left: "18%", size: 6,  color: "#a855f7", delay: "3s",   duration: "10s" },
-  { top: "28%", left: "74%", size: 5,  color: "#ec4899", delay: "1.5s", duration: "11s" },
-  { top: "52%", left: "58%", size: 4,  color: "#6366f1", delay: "2.5s", duration: "8s"  },
-  { top: "86%", left: "68%", size: 6,  color: "#c084fc", delay: "0.8s", duration: "9s"  },
-  { top: "70%", left: "40%", size: 5,  color: "#f472b6", delay: "1.2s", duration: "7s"  },
+  {
+    top: "8%",
+    left: "7%",
+    size: 10,
+    color: "#a855f7",
+    delay: "0s",
+    duration: "7s",
+  },
+  {
+    top: "15%",
+    left: "87%",
+    size: 8,
+    color: "#ec4899",
+    delay: "1s",
+    duration: "9s",
+  },
+  {
+    top: "42%",
+    left: "4%",
+    size: 7,
+    color: "#6366f1",
+    delay: "2s",
+    duration: "8s",
+  },
+  {
+    top: "63%",
+    left: "91%",
+    size: 9,
+    color: "#8b5cf6",
+    delay: "0.5s",
+    duration: "6s",
+  },
+  {
+    top: "78%",
+    left: "18%",
+    size: 6,
+    color: "#a855f7",
+    delay: "3s",
+    duration: "10s",
+  },
+  {
+    top: "28%",
+    left: "74%",
+    size: 5,
+    color: "#ec4899",
+    delay: "1.5s",
+    duration: "11s",
+  },
+  {
+    top: "52%",
+    left: "58%",
+    size: 4,
+    color: "#6366f1",
+    delay: "2.5s",
+    duration: "8s",
+  },
+  {
+    top: "86%",
+    left: "68%",
+    size: 6,
+    color: "#c084fc",
+    delay: "0.8s",
+    duration: "9s",
+  },
+  {
+    top: "70%",
+    left: "40%",
+    size: 5,
+    color: "#f472b6",
+    delay: "1.2s",
+    duration: "7s",
+  },
 ];
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const response = await loginUser({ email, password });
+      console.log(response);
+      if (response?.token) {
+        localStorage.setItem("token", response.token);
+        navigate("/dashboard", { replace: true });
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="relative min-h-screen bg-[#0d0b1a] flex items-center justify-center px-4 py-10 overflow-hidden">
-
       {/* ── Grid background ── */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -112,8 +196,7 @@ export default function LoginPage() {
         </p>
 
         {/* ── Form ── */}
-        <form className="flex flex-col gap-4">
-
+        <form className="flex flex-col gap-4" onSubmit={handleLogin}>
           {/* Email */}
           <div>
             <label className="block text-slate-300 text-sm mb-1.5 font-medium">
@@ -122,6 +205,8 @@ export default function LoginPage() {
             <input
               id="email"
               type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
               style={{
@@ -140,6 +225,8 @@ export default function LoginPage() {
               <input
                 id="password"
                 type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 className="w-full rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
                 style={{
@@ -154,7 +241,9 @@ export default function LoginPage() {
                 aria-label="Toggle password visibility"
               >
                 <Icon
-                  icon={showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"}
+                  icon={
+                    showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"
+                  }
                   width={18}
                 />
               </button>
@@ -174,15 +263,25 @@ export default function LoginPage() {
           <button
             id="login-btn"
             type="submit"
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 mt-1"
+            className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 mt-1 ${loading ? "cursor-not-allowed opacity-70" : ""}`}
+            disabled={loading}
             style={{
               background: "linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)",
               boxShadow: "0 4px 22px rgba(168,85,247,0.38)",
               fontFamily: "'DM Sans', sans-serif",
             }}
           >
-            Login
-            <Icon icon="mdi:arrow-right" width={18} />
+            {loading ? (
+              <>
+                <Icon icon="mdi:loading" width={18} className="animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                Login
+                <Icon icon="mdi:arrow-right" width={18} />
+              </>
+            )}
           </button>
 
           {/* OR divider */}
