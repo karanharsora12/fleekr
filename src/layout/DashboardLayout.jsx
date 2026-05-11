@@ -1,16 +1,18 @@
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
+import CreatePostModal from "../components/CreatePostModal";
 
 /* ── Sidebar Component ── */
-const Sidebar = () => {
+const Sidebar = ({ onCreatePost }) => {
   const navigate = useNavigate();
   const menuItems = [
-    { icon: "mdi:home-variant-outline", label: "Home" },
+    { icon: "mdi:home-variant-outline", label: "Home", path: "/dashboard" },
     { icon: "mdi:compass-outline", label: "Explore" },
     { icon: "mdi:message-text-outline", label: "Messages" },
     { icon: "mdi:bell-outline", label: "Notifications" },
-    { icon: "mdi:account-outline", label: "Profile" },
-    { icon: "mdi:view-dashboard", label: "Dashboard", active: true },
+    { icon: "mdi:account-outline", label: "Profile", path: "/profile" },
+    { icon: "mdi:view-dashboard", label: "Dashboard", path: "/dashboard" },
   ];
 
   const handleLogout = () => {
@@ -38,8 +40,9 @@ const Sidebar = () => {
         {menuItems.map((item) => (
           <button
             key={item.label}
+            onClick={() => item.path && navigate(item.path)}
             className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 group ${
-              item.active
+              item.path && window.location.pathname === item.path
                 ? "bg-purple-500/10 text-purple-400"
                 : "text-slate-400 hover:text-white hover:bg-white/5"
             }`}
@@ -48,13 +51,13 @@ const Sidebar = () => {
               icon={item.icon}
               width={22}
               className={
-                item.active
+                item.path && window.location.pathname === item.path
                   ? "text-purple-400"
                   : "group-hover:scale-110 transition-transform"
               }
             />
             <span className="font-medium text-[15px]">{item.label}</span>
-            {item.active && (
+            {item.path && window.location.pathname === item.path && (
               <div className="ml-auto w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_#a855f7]" />
             )}
           </button>
@@ -63,7 +66,11 @@ const Sidebar = () => {
 
       {/* Footer / Logout */}
       <div className="p-4 mt-auto space-y-4">
-        <button className="w-full py-4 rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 hover:scale-[1.02] transition-transform active:scale-100">
+        <button
+          id="create-post-btn"
+          onClick={onCreatePost}
+          className="w-full py-4 rounded-2xl bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold text-[15px] flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 hover:scale-[1.02] transition-transform active:scale-100"
+        >
           <Icon icon="mdi:plus" width={20} />
           Create Post
         </button>
@@ -225,69 +232,35 @@ const ReachChart = () => (
 );
 
 /* ── Main Dashboard Page ── */
-export default function DashboardPage() {
+export default function DashboardLayout() {
+  const [showCreatePost, setShowCreatePost] = useState(false);
+
   return (
-    <main className="flex-1 p-10 overflow-y-auto">
-      {/* Header */}
-      <header className="flex justify-between items-start mb-10">
-        <div>
-          <h1
-            className="text-white text-4xl font-bold mb-2 tracking-tight"
-            style={{ fontFamily: "'Syne', sans-serif" }}
-          >
-            Creator Dashboard
-          </h1>
-          <p className="text-slate-400 font-medium">
-            Track your performance and grow your audience ✨
-          </p>
-        </div>
-        <button className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-semibold hover:bg-white/10 transition-colors">
-          <Icon icon="mdi:calendar-range" width={18} />
-          Last 7 Days
-        </button>
-      </header>
+    <div className="min-h-screen bg-[#080710] flex font-sans selection:bg-purple-500/30">
+      <Sidebar onCreatePost={() => setShowCreatePost(true)} />
 
-      {/* Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <MetricCard
-          icon="mdi:account-group-outline"
-          label="Total Followers"
-          value="124.5K"
-          trend="+12.5%"
-          isPositive={true}
-          iconColor="#a855f7"
-        />
-        <MetricCard
-          icon="mdi:eye-outline"
-          label="Post Reach"
-          value="847K"
-          trend="+24.8%"
-          isPositive={true}
-          iconColor="#6366f1"
-        />
-        <MetricCard
-          icon="mdi:heart-outline"
-          label="Engagement Rate"
-          value="8.4%"
-          trend="+2.1%"
-          isPositive={true}
-          iconColor="#ec4899"
-        />
-        <MetricCard
-          icon="mdi:currency-usd"
-          label="Monthly Revenue"
-          value="$2,847"
-          trend="-5.2%"
-          isPositive={false}
-          iconColor="#22c55e"
-        />
-      </div>
+      <Outlet />
 
-      {/* Charts Section */}
-      <div className="flex flex-col xl:flex-row gap-6">
-        <EngagementChart />
-        <ReachChart />
-      </div>
-    </main>
+      {showCreatePost && (
+        <CreatePostModal onClose={() => setShowCreatePost(false)} />
+      )}
+
+      {/* ── Help button ── */}
+      <button
+        className="fixed bottom-6 right-6 w-12 h-12 rounded-full flex items-center justify-center text-slate-400 hover:text-white transition shadow-2xl z-50 group"
+        style={{
+          background: "rgba(255,255,255,0.07)",
+          border: "1px solid rgba(255,255,255,0.12)",
+          backdropFilter: "blur(10px)",
+        }}
+        aria-label="Help"
+      >
+        <Icon
+          icon="mdi:help"
+          width={24}
+          className="group-hover:rotate-12 transition-transform"
+        />
+      </button>
+    </div>
   );
 }

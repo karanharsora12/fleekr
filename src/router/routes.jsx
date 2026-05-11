@@ -1,17 +1,28 @@
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import RegisterPage from "../pages/RegisterPage";
 import LoginPage from "../pages/LoginPage";
 import DashboardPage from "../pages/DashboardPage";
+import ProfilePage from "../pages/ProfilePage";
 import ProtectedRoute from "../components/ProtectedRoute";
 import PublicRoute from "../components/PublicRoute";
+import DashboardLayout from "../layout/DashboardLayout";
 
 const routes = createBrowserRouter([
   {
     element: <ProtectedRoute />,
     children: [
       {
-        path: "/dashboard",
-        element: <DashboardPage />,
+        element: <DashboardLayout />,
+        children: [
+          {
+            path: "/dashboard",
+            element: <DashboardPage />,
+          },
+          {
+            path: "/profile",
+            element: <ProfilePage />,
+          },
+        ],
       },
     ],
   },
@@ -31,7 +42,7 @@ const routes = createBrowserRouter([
   },
   {
     path: "/",
-    element: <h1>Landing Page</h1>,
+    element: <Navigate to="/login" replace />,
   },
 ]);
 

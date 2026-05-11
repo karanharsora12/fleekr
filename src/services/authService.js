@@ -1,4 +1,4 @@
-import { post } from "../utils/APIClient";
+import { get, post } from "../utils/APIClient";
 import ENDPOINTS from "../utils/APIEndpoint";
 
 /**
@@ -8,3 +8,6 @@ import ENDPOINTS from "../utils/APIEndpoint";
 export const registerUser = (data) => post(ENDPOINTS.AUTH_REGISTER, data);
 
 export const loginUser = (data) => post(ENDPOINTS.AUTH_LOGIN, data);
+
+/** Fetch the currently authenticated user. */
+export const getMe = () => get(ENDPOINTS.GET_ME);
