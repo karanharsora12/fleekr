@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
-import { loginUser } from "../services/authService";
+import { generateOtp, verifyOtp } from "../services/authService";
 
 /* ── Floating orbs data ── */
 const ORBS = [
@@ -80,24 +80,56 @@ const ORBS = [
 ];
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
   const navigate = useNavigate();
+
+  const handleResendOtp = async () => {
+    setLoading(true);
+    setMessage("");
+    try {
+      const response = await generateOtp({ email });
+      if (response?.success) {
+        setMessage("OTP resent to your email!");
+      } else {
+        setMessage(response?.message || "Error resending OTP");
+      }
+    } catch (error) {
+      console.log(error);
+      setMessage(error?.response?.data?.message || "An error occurred");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setMessage("");
     try {
-      const response = await loginUser({ email, password });
-      console.log(response);
-      if (response?.token) {
-        localStorage.setItem("token", response.token);
-        navigate("/dashboard", { replace: true });
+      if (step === 1) {
+        const response = await generateOtp({ email });
+        if (response?.success) {
+          setStep(2);
+          setMessage("OTP sent to your email!");
+        } else {
+          setMessage(response?.message || "Error sending OTP");
+        }
+      } else {
+        const response = await verifyOtp({ email, otp });
+        if (response?.token) {
+          localStorage.setItem("token", response.token);
+          navigate("/dashboard", { replace: true });
+        } else {
+          setMessage(response?.message || "Invalid OTP");
+        }
       }
     } catch (error) {
       console.log(error);
+      setMessage(error?.response?.data?.message || "An error occurred");
     } finally {
       setLoading(false);
     }
@@ -207,8 +239,9 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              disabled={step === 2}
               placeholder="you@example.com"
-              className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+              className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition disabled:opacity-50"
               style={{
                 background: "rgba(255,255,255,0.05)",
                 border: "1px solid rgba(255,255,255,0.09)",
@@ -216,48 +249,41 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Password */}
-          <div>
-            <label className="block text-slate-300 text-sm mb-1.5 font-medium">
-              Password
-            </label>
-            <div className="relative">
+          {/* OTP */}
+          {step === 2 && (
+            <div>
+              <label className="block text-slate-300 text-sm mb-1.5 font-medium">
+                One-Time Password
+              </label>
               <input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                className="w-full rounded-xl px-4 py-3 pr-11 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                id="otp"
+                type="text"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                placeholder="Enter 6-digit OTP"
+                className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
                 style={{
                   background: "rgba(255,255,255,0.05)",
                   border: "1px solid rgba(255,255,255,0.09)",
                 }}
               />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition"
-                aria-label="Toggle password visibility"
-              >
-                <Icon
-                  icon={
-                    showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"
-                  }
-                  width={18}
-                />
-              </button>
+              <div className="flex justify-end mt-1.5">
+                <button
+                  type="button"
+                  onClick={handleResendOtp}
+                  disabled={loading}
+                  className="text-xs text-purple-400 hover:text-purple-300 transition disabled:opacity-50"
+                >
+                  Resend OTP?
+                </button>
+              </div>
             </div>
-            {/* Forgot Password */}
-            <div className="flex justify-end mt-1.5">
-              <a
-                href="#"
-                className="text-xs text-purple-400 hover:text-purple-300 transition"
-              >
-                Forgot Password?
-              </a>
-            </div>
-          </div>
+          )}
+
+          {message && (
+             <div className="text-sm text-purple-400 mt-1">{message}</div>
+          )}
 
           {/* Login Button */}
           <button
@@ -278,7 +304,7 @@ export default function LoginPage() {
               </>
             ) : (
               <>
-                Login
+                {step === 1 ? 'Send OTP' : 'Verify & Login'}
                 <Icon icon="mdi:arrow-right" width={18} />
               </>
             )}
