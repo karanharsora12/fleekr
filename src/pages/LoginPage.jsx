@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Icon } from "@iconify/react";
-import { generateOtp, verifyOtp } from "../services/authService";
+import { generateOtp, verifyOtp, loginUser } from "../services/authService";
 
 /* ── Floating orbs data ── */
 const ORBS = [
@@ -80,7 +80,9 @@ const ORBS = [
 ];
 
 export default function LoginPage() {
+  const [loginMethod, setLoginMethod] = useState("password"); // 'password' or 'otp'
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -92,10 +94,11 @@ export default function LoginPage() {
     setMessage("");
     try {
       const response = await generateOtp({ email });
-      if (response?.success) {
+      const data = response?.data || response;
+      if (data?.success || data?.message?.includes("sent")) {
         setMessage("OTP resent to your email!");
       } else {
-        setMessage(response?.message || "Error resending OTP");
+        setMessage(data?.message || "Error resending OTP");
       }
     } catch (error) {
       console.log(error);
@@ -110,21 +113,34 @@ export default function LoginPage() {
     setLoading(true);
     setMessage("");
     try {
-      if (step === 1) {
-        const response = await generateOtp({ email });
-        if (response?.success) {
-          setStep(2);
-          setMessage("OTP sent to your email!");
-        } else {
-          setMessage(response?.message || "Error sending OTP");
-        }
-      } else {
-        const response = await verifyOtp({ email, otp });
-        if (response?.token) {
-          localStorage.setItem("token", response.token);
+      if (loginMethod === "password") {
+        const response = await loginUser({ email, password });
+        const data = response?.data || response;
+        if (data?.token || data?.access_token) {
+          localStorage.setItem("token", data.token || data.access_token);
           navigate("/dashboard", { replace: true });
         } else {
-          setMessage(response?.message || "Invalid OTP");
+          setMessage(data?.message || "Invalid credentials");
+        }
+      } else {
+        if (step === 1) {
+          const response = await generateOtp({ email });
+          const data = response?.data || response;
+          if (data?.success || data?.message?.includes("sent") || data?.message?.includes("OTP")) {
+            setStep(2);
+            setMessage("OTP sent to your email!");
+          } else {
+            setMessage(data?.message || "Error sending OTP");
+          }
+        } else {
+          const response = await verifyOtp({ email, otp });
+          const data = response?.data || response;
+          if (data?.token || data?.access_token) {
+            localStorage.setItem("token", data.token || data.access_token);
+            navigate("/dashboard", { replace: true });
+          } else {
+            setMessage(data?.message || "Invalid OTP");
+          }
         }
       }
     } catch (error) {
@@ -227,6 +243,28 @@ export default function LoginPage() {
           Sign in to continue your journey
         </p>
 
+        {/* ── Login Method Tabs ── */}
+        <div className="flex p-1 mb-6 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}>
+          <button
+            type="button"
+            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+              loginMethod === "password" ? "bg-white/10 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"
+            }`}
+            onClick={() => { setLoginMethod("password"); setStep(1); setMessage(""); }}
+          >
+            Password
+          </button>
+          <button
+            type="button"
+            className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-all ${
+              loginMethod === "otp" ? "bg-white/10 text-white shadow-sm" : "text-slate-400 hover:text-slate-200"
+            }`}
+            onClick={() => { setLoginMethod("otp"); setStep(1); setMessage(""); }}
+          >
+            OTP
+          </button>
+        </div>
+
         {/* ── Form ── */}
         <form className="flex flex-col gap-4" onSubmit={handleLogin}>
           {/* Email */}
@@ -239,7 +277,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              disabled={step === 2}
+              disabled={loginMethod === "otp" && step === 2}
               placeholder="you@example.com"
               className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition disabled:opacity-50"
               style={{
@@ -249,8 +287,34 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* OTP */}
-          {step === 2 && (
+          {/* Password (if method is password) */}
+          {loginMethod === "password" && (
+            <div>
+              <label className="block text-slate-300 text-sm mb-1.5 font-medium">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter your password"
+                className="w-full rounded-xl px-4 py-3 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-purple-500 transition"
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.09)",
+                }}
+              />
+              <div className="flex justify-end mt-1.5">
+                <Link to="/forgot-password" className="text-xs text-purple-400 hover:text-purple-300 transition">
+                  Forgot password?
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* OTP (if method is otp and step is 2) */}
+          {loginMethod === "otp" && step === 2 && (
             <div>
               <label className="block text-slate-300 text-sm mb-1.5 font-medium">
                 One-Time Password
@@ -290,7 +354,7 @@ export default function LoginPage() {
             id="login-btn"
             type="submit"
             className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white text-sm font-semibold transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0 mt-1 ${loading ? "cursor-not-allowed opacity-70" : ""}`}
-            disabled={loading}
+            disabled={loading || !email || (loginMethod === "password" && !password) || (loginMethod === "otp" && step === 2 && !otp)}
             style={{
               background: "linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)",
               boxShadow: "0 4px 22px rgba(168,85,247,0.38)",
@@ -304,7 +368,7 @@ export default function LoginPage() {
               </>
             ) : (
               <>
-                {step === 1 ? 'Send OTP' : 'Verify & Login'}
+                {loginMethod === "password" ? 'Login' : step === 1 ? 'Send OTP' : 'Verify & Login'}
                 <Icon icon="mdi:arrow-right" width={18} />
               </>
             )}

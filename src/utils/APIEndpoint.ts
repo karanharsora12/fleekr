@@ -6,10 +6,13 @@ const ENDPOINTS = {
   AUTH_LOGOUT: "/logout",
 
   GET_ME: "/user",
+  USERS: "/users",
 
   POSTS_UPLOAD_MEDIA: "/posts/upload-media",
   POSTS_CREATE: "/posts/create",
   GET_USER_POSTS: "/posts/my",
+  POSTS_BY_USER: "/posts", // will append /{id}
+  EXPLORE_POSTS: "/posts/explore",
 } as const;
 
 export default ENDPOINTS;

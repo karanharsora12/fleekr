@@ -28,3 +28,5 @@ export const createPost = (data) => post(ENDPOINTS.POSTS_CREATE, data);
  * @returns {Promise<{ success: boolean, data: Array<object> }>}
  */
 export const getUserPosts = () => get(ENDPOINTS.GET_USER_POSTS);
+export const getPostsByUserId = (id) => get(`${ENDPOINTS.POSTS_BY_USER}/${id}`);
+export const getExplorePosts = (page = 1) => get(`${ENDPOINTS.EXPLORE_POSTS}?page=${page}`);

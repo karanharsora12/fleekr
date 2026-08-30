@@ -3,6 +3,10 @@ import RegisterPage from "../pages/RegisterPage";
 import LoginPage from "../pages/LoginPage";
 import DashboardPage from "../pages/DashboardPage";
 import ProfilePage from "../pages/ProfilePage";
+import HomePage from "../pages/HomePage";
+import ExplorePage from "../pages/ExplorePage";
+import MessagesPage from "../pages/MessagesPage";
+import NotificationsPage from "../pages/NotificationsPage";
 import ProtectedRoute from "../components/ProtectedRoute";
 import PublicRoute from "../components/PublicRoute";
 import DashboardLayout from "../layout/DashboardLayout";
@@ -14,6 +18,22 @@ const routes = createBrowserRouter([
       {
         element: <DashboardLayout />,
         children: [
+          {
+            path: "/home",
+            element: <HomePage />,
+          },
+          {
+            path: "/explore",
+            element: <ExplorePage />,
+          },
+          {
+            path: "/messages",
+            element: <MessagesPage />,
+          },
+          {
+            path: "/notifications",
+            element: <NotificationsPage />,
+          },
           {
             path: "/dashboard",
             element: <DashboardPage />,
@@ -42,7 +62,7 @@ const routes = createBrowserRouter([
   },
   {
     path: "/",
-    element: <Navigate to="/login" replace />,
+    element: <Navigate to="/home" replace />,
   },
 ]);
 

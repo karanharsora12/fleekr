@@ -1,16 +1,17 @@
 import { useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import { Icon } from "@iconify/react";
 import CreatePostModal from "../components/CreatePostModal";
 
 /* ── Sidebar Component ── */
 const Sidebar = ({ onCreatePost }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const menuItems = [
-    { icon: "mdi:home-variant-outline", label: "Home", path: "/dashboard" },
-    { icon: "mdi:compass-outline", label: "Explore" },
-    { icon: "mdi:message-text-outline", label: "Messages" },
-    { icon: "mdi:bell-outline", label: "Notifications" },
+    { icon: "mdi:home-variant-outline", label: "Home", path: "/home" },
+    { icon: "mdi:compass-outline", label: "Explore", path: "/explore" },
+    { icon: "mdi:message-text-outline", label: "Messages", path: "/messages" },
+    { icon: "mdi:bell-outline", label: "Notifications", path: "/notifications" },
     { icon: "mdi:account-outline", label: "Profile", path: "/profile" },
     { icon: "mdi:view-dashboard", label: "Dashboard", path: "/dashboard" },
   ];
@@ -42,7 +43,7 @@ const Sidebar = ({ onCreatePost }) => {
             key={item.label}
             onClick={() => item.path && navigate(item.path)}
             className={`w-full flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-200 group ${
-              item.path && window.location.pathname === item.path
+              item.path && location.pathname === item.path
                 ? "bg-purple-500/10 text-purple-400"
                 : "text-slate-400 hover:text-white hover:bg-white/5"
             }`}
@@ -51,13 +52,13 @@ const Sidebar = ({ onCreatePost }) => {
               icon={item.icon}
               width={22}
               className={
-                item.path && window.location.pathname === item.path
+                item.path && location.pathname === item.path
                   ? "text-purple-400"
                   : "group-hover:scale-110 transition-transform"
               }
             />
             <span className="font-medium text-[15px]">{item.label}</span>
-            {item.path && window.location.pathname === item.path && (
+            {item.path && location.pathname === item.path && (
               <div className="ml-auto w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_8px_#a855f7]" />
             )}
           </button>
@@ -231,6 +232,8 @@ const ReachChart = () => (
   </div>
 );
 
+import RightSidebar from "../components/RightSidebar";
+
 /* ── Main Dashboard Page ── */
 export default function DashboardLayout() {
   const [showCreatePost, setShowCreatePost] = useState(false);
@@ -240,6 +243,8 @@ export default function DashboardLayout() {
       <Sidebar onCreatePost={() => setShowCreatePost(true)} />
 
       <Outlet />
+
+      <RightSidebar />
 
       {showCreatePost && (
         <CreatePostModal onClose={() => setShowCreatePost(false)} />

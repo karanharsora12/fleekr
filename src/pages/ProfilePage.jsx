@@ -2,11 +2,7 @@ import { useEffect, useState } from "react";
 import { Icon } from "@iconify/react";
 import { getMe } from "../services/authService";
 import { getUserPosts } from "../services/postService";
-
-/* ── Helpers ── */
-const BASE_URL = "http://127.0.0.1:8000/storage/";
-
-const mediaUrl = (url) => (url?.startsWith("http") ? url : `${BASE_URL}${url}`);
+import { mediaUrl } from "../utils/helper";
 
 /* ── Stat pill ── */
 const Stat = ({ value, label }) => (
