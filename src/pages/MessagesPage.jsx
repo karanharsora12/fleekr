@@ -1,232 +1,84 @@
 import { useState, useRef, useEffect } from "react";
 import { Icon } from "@iconify/react";
-
-/* ── Mock Data ── */
-const MOCK_CONVERSATIONS = [
-  {
-    id: 1,
-    name: "Aria Chen",
-    initials: "AC",
-    lastMessage: "That sounds like an amazing idea! Let's do it.",
-    time: "2m",
-    unread: 2,
-    online: true,
-    gradient: "linear-gradient(135deg, #a855f7, #ec4899)",
-  },
-  {
-    id: 2,
-    name: "Marcus Rivera",
-    initials: "MR",
-    lastMessage: "I just finished the new layout. Check it out!",
-    time: "15m",
-    unread: 0,
-    online: true,
-    gradient: "linear-gradient(135deg, #6366f1, #a855f7)",
-  },
-  {
-    id: 3,
-    name: "Luna Patel",
-    initials: "LP",
-    lastMessage: "Thanks for sharing those resources 🙌",
-    time: "1h",
-    unread: 0,
-    online: false,
-    gradient: "linear-gradient(135deg, #ec4899, #f97316)",
-  },
-  {
-    id: 4,
-    name: "Design Team",
-    initials: "DT",
-    lastMessage: "Alex: Let's schedule a review for tomorrow",
-    time: "3h",
-    unread: 5,
-    online: false,
-    gradient: "linear-gradient(135deg, #22c55e, #06b6d4)",
-  },
-  {
-    id: 5,
-    name: "Kai Nakamura",
-    initials: "KN",
-    lastMessage: "The animation looks smooth now!",
-    time: "5h",
-    unread: 0,
-    online: false,
-    gradient: "linear-gradient(135deg, #f97316, #eab308)",
-  },
-  {
-    id: 6,
-    name: "Sophie Laurent",
-    initials: "SL",
-    lastMessage: "See you at the meetup!",
-    time: "1d",
-    unread: 0,
-    online: false,
-    gradient: "linear-gradient(135deg, #06b6d4, #6366f1)",
-  },
-  {
-    id: 7,
-    name: "Creative Hub",
-    initials: "CH",
-    lastMessage: "You: I'll send the files tonight",
-    time: "2d",
-    unread: 0,
-    online: false,
-    gradient: "linear-gradient(135deg, #8b5cf6, #ec4899)",
-  },
-];
-
-const MOCK_MESSAGES = [
-  {
-    id: 1,
-    sender: "them",
-    text: "Hey! Did you check out the new design updates?",
-    time: "10:30 AM",
-  },
-  {
-    id: 2,
-    sender: "me",
-    text: "Yes! The glassmorphism effects look completely stunning. Can't wait to use them.",
-    time: "10:32 AM",
-  },
-  {
-    id: 3,
-    sender: "them",
-    text: "Right? The blur effects and translucent cards are so clean. I think we should apply them to the dashboard too.",
-    time: "10:33 AM",
-  },
-  {
-    id: 4,
-    sender: "me",
-    text: "Absolutely. I'll start working on the dashboard components tomorrow.",
-    time: "10:35 AM",
-  },
-  {
-    id: 5,
-    sender: "them",
-    text: "That sounds like an amazing idea! Let's do it.",
-    time: "10:36 AM",
-  },
-];
+import { useSearchParams } from "react-router-dom";
+import { getConversations, getMessages, sendMessage } from "../services/chatService";
+import { getMe } from "../services/authService";
+import echo from "../utils/echo";
 
 /* ── Conversation Item ── */
-const ConversationItem = ({ convo, isActive, onClick }) => (
-  <button
-    onClick={onClick}
-    className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-200 text-left group"
-    style={{
-      background: isActive
-        ? "linear-gradient(135deg, rgba(168,85,247,0.12), rgba(99,102,241,0.12))"
-        : "transparent",
-      border: isActive
-        ? "1px solid rgba(168,85,247,0.2)"
-        : "1px solid transparent",
-    }}
-  >
-    {/* Avatar */}
-    <div className="relative flex-shrink-0">
-      <div
-        className="w-12 h-12 rounded-full flex items-center justify-center text-white text-sm font-bold transition-transform duration-200 group-hover:scale-105"
-        style={{ background: convo.gradient }}
-      >
-        {convo.initials}
-      </div>
-      {convo.online && (
-        <div
-          className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full border-2"
-          style={{
-            background: "#22c55e",
-            borderColor: "#0d0b1a",
-          }}
-        />
-      )}
-    </div>
-
-    {/* Info */}
-    <div className="flex-1 min-w-0">
-      <div className="flex items-center justify-between mb-0.5">
-        <h4
-          className={`text-sm font-semibold truncate ${
-            convo.unread > 0 ? "text-white" : "text-slate-200"
-          }`}
-        >
-          {convo.name}
-        </h4>
-        <span
-          className={`text-[11px] flex-shrink-0 ml-2 ${
-            convo.unread > 0
-              ? "text-purple-400 font-semibold"
-              : "text-slate-500"
-          }`}
-        >
-          {convo.time}
-        </span>
-      </div>
-      <div className="flex items-center justify-between">
-        <p
-          className={`text-xs truncate ${
-            convo.unread > 0 ? "text-slate-300 font-medium" : "text-slate-500"
-          }`}
-        >
-          {convo.lastMessage}
-        </p>
-        {convo.unread > 0 && (
-          <div
-            className="flex-shrink-0 ml-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-            style={{ background: "linear-gradient(135deg, #a855f7, #7c3aed)" }}
-          >
-            {convo.unread}
-          </div>
-        )}
-      </div>
-    </div>
-  </button>
-);
-
-/* ── Chat Bubble ── */
-const ChatBubble = ({ message }) => {
-  const isMe = message.sender === "me";
+const ConversationItem = ({ convo, isActive, onClick }) => {
+  const otherUser = convo.users?.[0] || {};
+  const name = otherUser.name || "Unknown User";
+  const initials = name.substring(0, 2).toUpperCase();
+  const lastMsg = convo.messages?.[0]?.message || "Start a conversation";
+  
+  // Create a consistent gradient based on user ID or name length
+  const colors = [
+    ["#a855f7", "#ec4899"],
+    ["#6366f1", "#a855f7"],
+    ["#ec4899", "#f97316"],
+    ["#22c55e", "#06b6d4"],
+    ["#06b6d4", "#6366f1"]
+  ];
+  const colorPair = colors[(otherUser.id || 0) % colors.length];
+  const gradient = `linear-gradient(135deg, ${colorPair[0]}, ${colorPair[1]})`;
 
   return (
-    <div className={`flex ${isMe ? "justify-end" : "justify-start"} mb-1`}>
-      <div
-        className={`max-w-[75%] px-4 py-2.5 text-[14px] leading-relaxed ${
-          isMe
-            ? "text-white rounded-2xl rounded-br-md"
-            : "text-slate-200 rounded-2xl rounded-bl-md"
-        }`}
-        style={{
-          background: isMe
-            ? "linear-gradient(135deg, #7c3aed, #a855f7)"
-            : "rgba(255,255,255,0.06)",
-          border: isMe ? "none" : "1px solid rgba(255,255,255,0.06)",
-          boxShadow: isMe ? "0 4px 16px rgba(168,85,247,0.25)" : "none",
-        }}
-      >
-        {message.text}
+    <button
+      onClick={onClick}
+      className="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-2xl transition-all duration-200 text-left group"
+      style={{
+        background: isActive
+          ? "linear-gradient(135deg, rgba(168,85,247,0.12), rgba(99,102,241,0.12))"
+          : "transparent",
+        border: isActive
+          ? "1px solid rgba(168,85,247,0.2)"
+          : "1px solid transparent",
+      }}
+    >
+      <div className="relative flex-shrink-0">
+        <div
+          className="w-12 h-12 rounded-full flex items-center justify-center text-white text-sm font-bold transition-transform duration-200 group-hover:scale-105 overflow-hidden"
+          style={{ background: gradient }}
+        >
+          {initials}
+        </div>
       </div>
-    </div>
+
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between mb-0.5">
+          <h4 className="text-sm font-semibold truncate text-slate-200 group-hover:text-white">
+            {name}
+          </h4>
+        </div>
+        <div className="flex items-center justify-between">
+          <p className="text-xs truncate text-slate-500 group-hover:text-slate-400">
+            {lastMsg}
+          </p>
+        </div>
+      </div>
+    </button>
   );
 };
 
-/* ── Typing Indicator ── */
-const TypingIndicator = () => (
-  <div className="flex justify-start mb-1">
+/* ── Chat Bubble ── */
+const ChatBubble = ({ message, isMe }) => (
+  <div className={`flex ${isMe ? "justify-end" : "justify-start"} mb-1`}>
     <div
-      className="px-4 py-3 rounded-2xl rounded-bl-md flex items-center gap-1.5"
+      className={`max-w-[75%] px-4 py-2.5 text-[14px] leading-relaxed break-words whitespace-pre-wrap ${
+        isMe
+          ? "text-white rounded-2xl rounded-br-md"
+          : "text-slate-200 rounded-2xl rounded-bl-md"
+      }`}
       style={{
-        background: "rgba(255,255,255,0.06)",
-        border: "1px solid rgba(255,255,255,0.06)",
+        background: isMe
+          ? "linear-gradient(135deg, #7c3aed, #a855f7)"
+          : "rgba(255,255,255,0.06)",
+        border: isMe ? "none" : "1px solid rgba(255,255,255,0.06)",
+        boxShadow: isMe ? "0 4px 16px rgba(168,85,247,0.25)" : "none",
       }}
     >
-      {[0, 1, 2].map((i) => (
-        <div
-          key={i}
-          className="w-2 h-2 rounded-full bg-slate-400"
-          style={{
-            animation: `typing 1.4s ease-in-out ${i * 0.2}s infinite`,
-          }}
-        />
-      ))}
+      {message.message}
     </div>
   </div>
 );
@@ -252,73 +104,128 @@ const EmptyChatState = () => (
         Select a conversation
       </p>
       <p className="text-slate-500 text-sm mt-2 max-w-xs">
-        Choose from your existing conversations or start a new one
+        Choose from your existing conversations to start chatting
       </p>
     </div>
-    <button
-      className="mt-1 px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 hover:scale-[1.02]"
-      style={{
-        background: "linear-gradient(135deg, #a855f7, #7c3aed)",
-        color: "#fff",
-        boxShadow: "0 4px 16px rgba(168,85,247,0.3)",
-      }}
-    >
-      <Icon icon="mdi:plus" width={16} className="inline mr-1.5 -mt-0.5" />
-      New Message
-    </button>
   </div>
 );
 
-/* ══════════════════════════════════════
-   Main Messages Page
-══════════════════════════════════════ */
 export default function MessagesPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialConvoId = searchParams.get("convo");
+
+  const [currentUser, setCurrentUser] = useState(null);
+  const [conversations, setConversations] = useState([]);
   const [activeConvo, setActiveConvo] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  
+  const [messages, setMessages] = useState([]);
   const [messageInput, setMessageInput] = useState("");
-  const [messages, setMessages] = useState(MOCK_MESSAGES);
-  const [isTyping, setIsTyping] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  /* ── Scroll to bottom ── */
+  // 1. Fetch Current User & Conversations
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const me = await getMe();
+        setCurrentUser(me);
+
+        const res = await getConversations();
+        const convos = res?.conversations || res?.data?.conversations || [];
+        setConversations(convos);
+
+        // If there's a ?convo=ID in the URL, try to set it as active
+        if (initialConvoId) {
+          const found = convos.find(c => c.id.toString() === initialConvoId);
+          if (found) {
+            setActiveConvo(found);
+          }
+        }
+      } catch (err) {
+        console.error("Error loading chat data", err);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+    init();
+  }, [initialConvoId]);
+
+  // 2. Fetch Messages for Active Conversation
+  const loadMessages = async (convoId) => {
+    try {
+      const res = await getMessages(convoId);
+      const msgs = res?.messages || res?.data?.messages || [];
+      // Backend returns latest() which is descending order. We need oldest first to render top-to-bottom.
+      setMessages([...msgs].reverse());
+    } catch (err) {
+      console.error("Error loading messages", err);
+    }
+  };
+
+  useEffect(() => {
+    if (activeConvo) {
+      loadMessages(activeConvo.id);
+      setSearchParams({ convo: activeConvo.id });
+
+      // Subscribe to private channel
+      const channel = echo.private(`conversation.${activeConvo.id}`);
+      
+      channel.listen('MessageSent', (e) => {
+        // Only append if it's not our own message (which was appended optimistically)
+        setMessages((prev) => {
+          if (prev.find(m => m.id === e.message.id)) return prev;
+          return [...prev, e.message];
+        });
+      });
+
+      return () => {
+        channel.stopListening('MessageSent');
+        echo.leave(`conversation.${activeConvo.id}`);
+      };
+    } else {
+      setMessages([]);
+      setSearchParams({});
+    }
+  }, [activeConvo, setSearchParams]);
+
+  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping]);
+  }, [messages]);
 
-  /* ── Filter conversations ── */
-  const filteredConvos = MOCK_CONVERSATIONS.filter((c) =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-
-  /* ── Send message ── */
-  const handleSend = () => {
-    if (!messageInput.trim()) return;
-
-    const newMsg = {
-      id: Date.now(),
-      sender: "me",
-      text: messageInput.trim(),
-      time: "Now",
-    };
-
-    setMessages((prev) => [...prev, newMsg]);
+  // Handle Send
+  const handleSend = async () => {
+    if (!messageInput.trim() || !activeConvo || isSending) return;
+    
+    const text = messageInput.trim();
     setMessageInput("");
+    setIsSending(true);
 
-    // Simulate typing response
-    setIsTyping(true);
-    setTimeout(() => {
-      setIsTyping(false);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: Date.now() + 1,
-          sender: "them",
-          text: "That's great! I'll get back to you soon.",
-          time: "Now",
-        },
-      ]);
-    }, 2000);
+    // Optimistic UI update
+    const optMsg = {
+      id: "temp-" + Date.now(),
+      sender_id: currentUser.id,
+      message: text,
+    };
+    setMessages(prev => [...prev, optMsg]);
+
+    try {
+      const res = await sendMessage(activeConvo.id, text);
+      const savedMsg = res?.data || res;
+      // Replace optimistic message with real one to avoid duplicates on broadcast
+      setMessages(prev => prev.map(m => m.id === optMsg.id ? savedMsg : m));
+    } catch (error) {
+      console.error("Error sending message", error);
+      // Revert optimistic message
+      setMessages(prev => prev.filter(m => m.id !== optMsg.id));
+    } finally {
+      setIsSending(false);
+      inputRef.current?.focus();
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -328,26 +235,16 @@ export default function MessagesPage() {
     }
   };
 
-  const selectConvo = (convo) => {
-    setActiveConvo(convo);
-    // In a real app, this would load messages for the conversation
-  };
+  const filteredConvos = conversations.filter((c) => {
+    const otherUser = c.users?.[0] || {};
+    return (otherUser.name || "").toLowerCase().includes(searchQuery.toLowerCase());
+  });
 
   return (
     <main className="flex-1 p-6 md:p-8 overflow-hidden flex flex-col h-screen">
       {/* ── Header ── */}
       <header className="mb-5 flex items-end justify-between">
-        <button
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 hover:scale-[1.02]"
-          style={{
-            background: "linear-gradient(135deg, #a855f7, #7c3aed)",
-            color: "#fff",
-            boxShadow: "0 4px 16px rgba(168,85,247,0.3)",
-          }}
-        >
-          <Icon icon="mdi:plus" width={18} />
-          <span className="hidden sm:inline">New Chat</span>
-        </button>
+        <h1 className="text-white text-2xl font-bold font-[Syne]">Messages</h1>
       </header>
 
       {/* ── Main Chat Container ── */}
@@ -382,45 +279,28 @@ export default function MessagesPage() {
                   background: "rgba(255,255,255,0.04)",
                   border: "1px solid rgba(255,255,255,0.06)",
                 }}
-                onFocus={(e) => {
-                  e.target.style.borderColor = "rgba(168,85,247,0.3)";
-                }}
-                onBlur={(e) => {
-                  e.target.style.borderColor = "rgba(255,255,255,0.06)";
-                }}
               />
             </div>
           </div>
 
-          {/* Tabs */}
-          <div className="flex px-4 pt-3 gap-1">
-            {["All", "Unread", "Groups"].map((tab, i) => (
-              <button
-                key={tab}
-                className="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200"
-                style={{
-                  background: i === 0 ? "rgba(168,85,247,0.12)" : "transparent",
-                  color: i === 0 ? "#c084fc" : "#64748b",
-                }}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
           {/* Conversation List */}
           <div className="flex-1 overflow-y-auto p-2.5 space-y-0.5">
-            {filteredConvos.map((convo) => (
-              <ConversationItem
-                key={convo.id}
-                convo={convo}
-                isActive={activeConvo?.id === convo.id}
-                onClick={() => selectConvo(convo)}
-              />
-            ))}
-            {filteredConvos.length === 0 && (
-              <div className="text-center py-10 text-slate-500 text-sm">
-                No conversations found
+            {initialLoading ? (
+              <div className="text-center py-10">
+                <Icon icon="mdi:loading" className="animate-spin text-purple-400 mx-auto" width={24} />
+              </div>
+            ) : filteredConvos.length > 0 ? (
+              filteredConvos.map((convo) => (
+                <ConversationItem
+                  key={convo.id}
+                  convo={convo}
+                  isActive={activeConvo?.id === convo.id}
+                  onClick={() => setActiveConvo(convo)}
+                />
+              ))
+            ) : (
+              <div className="text-center py-10 text-slate-500 text-sm px-4">
+                No conversations found. Go to a user's profile to start chatting.
               </div>
             )}
           </div>
@@ -440,7 +320,6 @@ export default function MessagesPage() {
                 style={{ background: "rgba(255,255,255,0.02)" }}
               >
                 <div className="flex items-center gap-3.5">
-                  {/* Mobile back button */}
                   <button
                     onClick={() => setActiveConvo(null)}
                     className="md:hidden w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all mr-1"
@@ -449,60 +328,28 @@ export default function MessagesPage() {
                   </button>
                   <div className="relative">
                     <div
-                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold"
-                      style={{ background: activeConvo.gradient }}
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold bg-purple-500"
                     >
-                      {activeConvo.initials}
+                      {(activeConvo.users?.[0]?.name || "U").substring(0, 2).toUpperCase()}
                     </div>
-                    {activeConvo.online && (
-                      <div
-                        className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2"
-                        style={{
-                          background: "#22c55e",
-                          borderColor: "#0d0b1a",
-                        }}
-                      />
-                    )}
                   </div>
                   <div>
                     <h3 className="text-white font-semibold text-[15px]">
-                      {activeConvo.name}
+                      {activeConvo.users?.[0]?.name || "Unknown User"}
                     </h3>
-                    <p className="text-slate-500 text-xs">
-                      {activeConvo.online ? "Online" : "Last seen recently"}
-                    </p>
                   </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
-                    <Icon icon="mdi:phone-outline" width={20} />
-                  </button>
-                  <button className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
-                    <Icon icon="mdi:video-outline" width={20} />
-                  </button>
-                  <button className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-white/5 transition-all duration-200">
-                    <Icon icon="mdi:dots-vertical" width={20} />
-                  </button>
                 </div>
               </div>
 
               {/* Messages */}
               <div className="flex-1 overflow-y-auto px-6 py-5 space-y-3">
-                {/* Date separator */}
-                <div className="flex items-center gap-4 my-2">
-                  <div className="flex-1 h-px bg-white/5" />
-                  <span className="text-slate-600 text-[11px] font-semibold uppercase tracking-wider">
-                    Today
-                  </span>
-                  <div className="flex-1 h-px bg-white/5" />
-                </div>
-
                 {messages.map((msg) => (
-                  <ChatBubble key={msg.id} message={msg} />
+                  <ChatBubble 
+                    key={msg.id} 
+                    message={msg} 
+                    isMe={msg.sender_id === currentUser?.id}
+                  />
                 ))}
-
-                {isTyping && <TypingIndicator />}
-
                 <div ref={messagesEndRef} />
               </div>
 
@@ -518,9 +365,6 @@ export default function MessagesPage() {
                     border: "1px solid rgba(255,255,255,0.06)",
                   }}
                 >
-                  <button className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-purple-400 hover:bg-white/5 transition-all duration-200 flex-shrink-0">
-                    <Icon icon="mdi:plus-circle-outline" width={22} />
-                  </button>
                   <input
                     ref={inputRef}
                     type="text"
@@ -530,15 +374,9 @@ export default function MessagesPage() {
                     placeholder="Type a message..."
                     className="flex-1 bg-transparent text-white text-[15px] focus:outline-none placeholder:text-slate-500 min-w-0"
                   />
-                  <button className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-purple-400 hover:bg-white/5 transition-all duration-200 flex-shrink-0">
-                    <Icon icon="mdi:emoticon-outline" width={22} />
-                  </button>
-                  <button className="w-9 h-9 rounded-xl flex items-center justify-center text-slate-400 hover:text-purple-400 hover:bg-white/5 transition-all duration-200 flex-shrink-0">
-                    <Icon icon="mdi:image-outline" width={22} />
-                  </button>
                   <button
                     onClick={handleSend}
-                    disabled={!messageInput.trim()}
+                    disabled={!messageInput.trim() || isSending}
                     className="w-10 h-10 rounded-xl flex items-center justify-center text-white transition-all duration-200 flex-shrink-0 disabled:opacity-30 disabled:cursor-not-allowed hover:scale-105 active:scale-95"
                     style={{
                       background: messageInput.trim()
@@ -549,7 +387,7 @@ export default function MessagesPage() {
                         : "none",
                     }}
                   >
-                    <Icon icon="mdi:send" width={18} />
+                    <Icon icon={isSending ? "mdi:loading" : "mdi:send"} className={isSending ? "animate-spin" : ""} width={18} />
                   </button>
                 </div>
               </div>
@@ -559,18 +397,6 @@ export default function MessagesPage() {
           )}
         </div>
       </div>
-
-      {/* ── Styles ── */}
-      <style>{`
-        @keyframes shimmer {
-          0% { background-position: -200% 0; }
-          100% { background-position: 200% 0; }
-        }
-        @keyframes typing {
-          0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-          30% { transform: translateY(-4px); opacity: 1; }
-        }
-      `}</style>
     </main>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { Icon } from "@iconify/react";
 import { getExplorePosts } from "../services/postService";
 import { mediaUrl } from "../utils/helper";
+import PostDetailModal from "../components/PostDetailModal";
 
 /* ── Category Tags ── */
 const CATEGORIES = [
@@ -27,17 +28,14 @@ const Shimmer = ({ className }) => (
 
 const ExploreSkeleton = () => (
   <div>
-    {/* Search skeleton */}
     <div className="mb-8 max-w-2xl">
       <Shimmer className="h-14 rounded-2xl" />
     </div>
-    {/* Tags skeleton */}
     <div className="flex gap-3 mb-8 overflow-hidden">
       {[1, 2, 3, 4, 5].map((i) => (
         <Shimmer key={i} className="h-10 w-24 rounded-full flex-shrink-0" />
       ))}
     </div>
-    {/* Grid skeleton - masonry-like */}
     <div className="columns-2 md:columns-3 gap-4 space-y-4">
       {[1, 2, 3, 4, 5, 6].map((i) => (
         <div key={i} className="break-inside-avoid">
@@ -52,7 +50,7 @@ const ExploreSkeleton = () => (
 );
 
 /* ── Post Grid Card ── */
-const ExploreCard = ({ post, index }) => {
+const ExploreCard = ({ post, index, onOpen }) => {
   const [hovered, setHovered] = useState(false);
   const [imgLoaded, setImgLoaded] = useState(false);
 
@@ -69,7 +67,6 @@ const ExploreCard = ({ post, index }) => {
         .slice(0, 2)
     : "?";
 
-  // Vary card heights for masonry feel
   const heightClass = ["aspect-[3/4]", "aspect-square", "aspect-[4/5]"][
     index % 3
   ];
@@ -86,6 +83,7 @@ const ExploreCard = ({ post, index }) => {
           background: "rgba(255,255,255,0.03)",
           border: "1px solid rgba(255,255,255,0.06)",
         }}
+        onClick={() => onOpen(post)}
       >
         {/* Media */}
         <div className={`relative ${heightClass} bg-black/30`}>
@@ -122,7 +120,6 @@ const ExploreCard = ({ post, index }) => {
               />
             )
           ) : (
-            /* Text-only post */
             <div
               className="w-full h-full flex items-center justify-center p-6 text-center"
               style={{
@@ -150,7 +147,7 @@ const ExploreCard = ({ post, index }) => {
             </div>
           )}
 
-          {/* Bottom gradient for text legibility */}
+          {/* Bottom gradient */}
           <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none" />
 
           {/* Hover overlay with stats */}
@@ -230,12 +227,13 @@ export default function ExplorePage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
+  const [selectedPost, setSelectedPost] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
       try {
         const postsRes = await getExplorePosts();
-        
+
         const raw = postsRes;
         const list = Array.isArray(raw)
           ? raw
@@ -259,7 +257,6 @@ export default function ExplorePage() {
   const filteredPosts = useMemo(() => {
     let result = [...posts];
 
-    // Search filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
@@ -269,7 +266,6 @@ export default function ExplorePage() {
       );
     }
 
-    // Category filter
     if (activeCategory === "photos") {
       result = result.filter(
         (p) =>
@@ -291,6 +287,20 @@ export default function ExplorePage() {
 
   return (
     <main className="flex-1 p-8 md:p-10 overflow-y-auto">
+      {/* ── Header ── */}
+      <header className="mb-8">
+        <h1
+          className="text-white text-3xl md:text-4xl font-bold mb-1.5 tracking-tight"
+          style={{ fontFamily: "'Syne', sans-serif" }}
+        >
+          Explore
+        </h1>
+        <p className="text-slate-400 text-sm font-medium">
+          Discover trending content and new creators
+        </p>
+      </header>
+
+      {/* ── Search Bar ── */}
       <div className="mb-6 max-w-2xl relative">
         <Icon
           icon="mdi:magnify"
@@ -362,14 +372,27 @@ export default function ExplorePage() {
           <div className="flex-1">
             <div className="columns-2 md:columns-3 gap-4">
               {filteredPosts.map((post, i) => (
-                <ExploreCard key={post.id} post={post} index={i} />
+                <ExploreCard
+                  key={post.id}
+                  post={post}
+                  index={i}
+                  onOpen={setSelectedPost}
+                />
               ))}
             </div>
           </div>
         </div>
       )}
 
-      {/* ── Shimmer keyframe ── */}
+      {/* ── Post Detail Modal ── */}
+      {selectedPost && (
+        <PostDetailModal
+          post={selectedPost}
+          onClose={() => setSelectedPost(null)}
+        />
+      )}
+
+      {/* ── Keyframes ── */}
       <style>{`
         @keyframes shimmer {
           0% { background-position: -200% 0; }

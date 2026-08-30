@@ -3,6 +3,7 @@ import { Icon } from "@iconify/react";
 import { getMe } from "../services/authService";
 import { getUserPosts } from "../services/postService";
 import { mediaUrl } from "../utils/helper";
+import PostDetailModal from "../components/PostDetailModal";
 
 /* ── Stat pill ── */
 const Stat = ({ value, label }) => (
@@ -21,7 +22,7 @@ const Shimmer = ({ className }) => (
 );
 
 /* ── Single Post Card ── */
-const PostCard = ({ post }) => {
+const PostCard = ({ post, onOpen }) => {
   const firstMedia = post.media?.[0];
   const [hovered, setHovered] = useState(false);
 
@@ -30,6 +31,7 @@ const PostCard = ({ post }) => {
       className="relative aspect-square rounded-2xl overflow-hidden cursor-pointer group"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={() => onOpen(post)}
     >
       {firstMedia ? (
         firstMedia.media_type === "video" ? (
@@ -150,6 +152,7 @@ export default function ProfilePage() {
   const [loadingUser, setLoadingUser] = useState(true);
   const [loadingPosts, setLoadingPosts] = useState(true);
   const [activeTab, setActiveTab] = useState("posts");
+  const [selectedPost, setSelectedPost] = useState(null);
 
   useEffect(() => {
     getMe()
@@ -159,8 +162,13 @@ export default function ProfilePage() {
 
     getUserPosts()
       .then((res) => {
-        // Handle both { data: [...] } and plain array responses
-        const list = Array.isArray(res) ? res : (res?.data ?? []);
+        const list = Array.isArray(res)
+          ? res
+          : Array.isArray(res?.data)
+          ? res.data
+          : Array.isArray(res?.data?.data)
+          ? res.data.data
+          : [];
         setPosts(list);
       })
       .catch(console.error)
@@ -318,7 +326,13 @@ export default function ProfilePage() {
             ) : posts.length === 0 ? (
               <EmptyPosts />
             ) : (
-              posts.map((post) => <PostCard key={post.id} post={post} />)
+              posts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  onOpen={setSelectedPost}
+                />
+              ))
             )}
           </div>
         )}
@@ -351,6 +365,14 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+
+      {/* ── Post Detail Modal ── */}
+      {selectedPost && (
+        <PostDetailModal
+          post={selectedPost}
+          onClose={() => setSelectedPost(null)}
+        />
+      )}
     </main>
   );
 }

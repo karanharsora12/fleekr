@@ -118,7 +118,7 @@ export default function LoginPage() {
         const data = response?.data || response;
         if (data?.token || data?.access_token) {
           localStorage.setItem("token", data.token || data.access_token);
-          navigate("/dashboard", { replace: true });
+          navigate("/home", { replace: true });
         } else {
           setMessage(data?.message || "Invalid credentials");
         }
@@ -137,7 +137,7 @@ export default function LoginPage() {
           const data = response?.data || response;
           if (data?.token || data?.access_token) {
             localStorage.setItem("token", data.token || data.access_token);
-            navigate("/dashboard", { replace: true });
+            navigate("/home", { replace: true });
           } else {
             setMessage(data?.message || "Invalid OTP");
           }

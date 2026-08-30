@@ -12,6 +12,8 @@
   "dependencies": {
     "@iconify/react": "^6.0.2",
     "axios": "^1.16.0",
+    "laravel-echo": "^2.4.0",
+    "pusher-js": "^8.6.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-router-dom": "^7.15.0"

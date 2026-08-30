@@ -1,10 +1,11 @@
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import RegisterPage from "../pages/RegisterPage";
 import LoginPage from "../pages/LoginPage";
-import DashboardPage from "../pages/DashboardPage";
+import SearchPage from "../pages/SearchPage";
 import ProfilePage from "../pages/ProfilePage";
 import HomePage from "../pages/HomePage";
 import ExplorePage from "../pages/ExplorePage";
+import UserDetailPage from "../pages/UserDetailPage";
 import MessagesPage from "../pages/MessagesPage";
 import NotificationsPage from "../pages/NotificationsPage";
 import ProtectedRoute from "../components/ProtectedRoute";
@@ -35,8 +36,12 @@ const routes = createBrowserRouter([
             element: <NotificationsPage />,
           },
           {
-            path: "/dashboard",
-            element: <DashboardPage />,
+            path: "/search",
+            element: <SearchPage />,
+          },
+          {
+            path: "/user/:id",
+            element: <UserDetailPage />,
           },
           {
             path: "/profile",
